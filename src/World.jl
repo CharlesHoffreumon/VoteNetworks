@@ -10,13 +10,14 @@ struct VotingWorld
 end
 
 function initialize(num_voters, parties = [:A, :B], init_preferences = [], init_beliefs=[], network_structure = "barabasi-albert", avg_edges=3, preferences_method="random", preference_order="degree",
-    beliefs_order="NoBeliefs", edges_matrix = [], watts_strogatz_beta=0, preference_range = [0,11,Inf])
+    beliefs_order="NoBeliefs", edges_matrix = [], watts_strogatz_beta=0, preference_range = [0,11,Inf], init_attributes = {}, attributes_order= "NoAttributes")
     if isa(parties, Array{String})
         parties = convert(Array{Symbol}, parties)
     end #convert_parties_to_symbols
     network = build_network(num_voters, network_structure, avg_edges, edges_matrix, watts_strogatz_beta)
     network = attach_preferences(network, parties, init_preferences, preferences_method, preference_order, preference_range)
     network = attach_beliefs(network, init_beliefs, beliefs_order)
+    network = attach_attributes(network, init_attributes, attributes_order)
     print(typeof(parties))
     print(typeof(network))
     print(typeof(preference_range))
@@ -91,10 +92,27 @@ function attach_beliefs(network, init_beliefs, beliefs_order)
     return network
 end
 
+function attach_attributes(network, init_attributes, attributes_order)
+    # I'm way too lazy to implement a belief system right now
+    if attributes_order == "NoAttributes"
+        for node in LightGraphs.vertices(network)
+            MetaGraphs.set_prop!(network, node, :attributes, {})
+        end
+    end
+    return network
+end
+
 function ordered_nodes_by_degree(network)
     nodes_degrees = [(node, length(LightGraphs.neighbors(network, node))) for node in LightGraphs.vertices(network)]
     nodes_degrees = sort(nodes_degrees, by=x->x[2])
     return [node[1] for node in nodes_degrees]
 end #ordered_nodes_by_degree
+
+function update_node(world::VotingWorld, node, preferences, beliefs, attributes)
+    new_network = MetaGraphs.set_prop(world.network, node, :preferences, preferences)
+    new_network = MetaGraphs.set_prop(new_network, node, :beliefs, beliefs)
+    new_network = MetaGraphs.set_prop(new_network, node, :attributes, attributes)
+    return new_network
+end
 
 end #World
