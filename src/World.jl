@@ -1,7 +1,7 @@
 module World
 using MetaGraphs, LightGraphs
 
-export initialize
+export initialize, VotingWorld
 
 struct VotingWorld
     network::MetaGraphs.MetaGraph
@@ -10,7 +10,7 @@ struct VotingWorld
 end
 
 function initialize(num_voters, parties = [:A, :B], init_preferences = [], init_beliefs=[], network_structure = "barabasi-albert", avg_edges=3, preferences_method="random", preference_order="degree",
-    beliefs_order="NoBeliefs", edges_matrix = [], watts_strogatz_beta=0, preference_range = [0,11,Inf], init_attributes = {}, attributes_order= "NoAttributes")
+    beliefs_order="NoBeliefs", edges_matrix = [], watts_strogatz_beta=0, preference_range = [0,11,Inf], init_attributes = Dict(), attributes_order= "NoAttributes")
     if isa(parties, Array{String})
         parties = convert(Array{Symbol}, parties)
     end #convert_parties_to_symbols
@@ -96,7 +96,7 @@ function attach_attributes(network, init_attributes, attributes_order)
     # I'm way too lazy to implement a belief system right now
     if attributes_order == "NoAttributes"
         for node in LightGraphs.vertices(network)
-            MetaGraphs.set_prop!(network, node, :attributes, {})
+            MetaGraphs.set_prop!(network, node, :attributes, Dict())
         end
     end
     return network

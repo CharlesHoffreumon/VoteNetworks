@@ -1,5 +1,5 @@
 module Dynamics
-    using World
+    using VoteNetworks.World
     using MetaGraphs
     using LightGraphs
 
@@ -24,7 +24,7 @@ module Dynamics
         new_world = world
         ii = 1
         for node in LightGraphs.vertices(world.network)
-            if rand() < dynamics.probabilities_to_be_called[ii]
+            if rand() <= dynamics.probabilities_to_be_called[ii]
                 neighborhood = gen_neighborhood(world.network, node, dynamics.limit)
                 node_preferences = MetaGraphs.get_prop(world.network, node, :preferences)
                 node_beliefs = MetaGraphs.get_prop(world.network, node, :beliefs)

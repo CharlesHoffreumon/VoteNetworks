@@ -1,7 +1,7 @@
 module VoteNetworks
 
-# package code goes here
-
 include("World.jl")
 include("Dynamics.jl")
+include("Vote.jl")
+
 end # module
