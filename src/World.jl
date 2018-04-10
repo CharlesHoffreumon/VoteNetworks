@@ -9,14 +9,14 @@ struct VotingWorld
     preference_range::Array{Float64}
 end
 
-function initialize(num_voters, parties = [:A, :B], init_preferences = [], init_beliefs=[], network_structure = "barabasi-albert", avg_edges=3, preferences_method="random", preference_order="degree",
-    beliefs_order="NoBeliefs", edges_matrix = [], watts_strogatz_beta=0, preference_range = [0,11,Inf], init_attributes = Dict(), attributes_order= "NoAttributes")
+function initialize(num_voters; parties = [:A, :B], init_preferences = [], init_beliefs=[], network_structure = "barabasi-albert", avg_edges=3, preferences_method="random", preference_order="degree",
+    beliefs_order="RandomBeliefs", edges_matrix = [], watts_strogatz_beta=0, preference_range = [0,11,Inf], init_attributes = Dict(), attributes_order= "NoAttributes")
     if isa(parties, Array{String})
         parties = convert(Array{Symbol}, parties)
     end #convert_parties_to_symbols
     network = build_network(num_voters, network_structure, avg_edges, edges_matrix, watts_strogatz_beta)
     network = attach_preferences(network, parties, init_preferences, preferences_method, preference_order, preference_range)
-    network = attach_beliefs(network, init_beliefs, beliefs_order)
+    network = attach_beliefs(network, init_beliefs, beliefs_order, parties)
     network = attach_attributes(network, init_attributes, attributes_order)
     print(typeof(parties))
     print(typeof(network))
@@ -82,11 +82,18 @@ function attach_preferences(network, parties, init_preferences, preferences_meth
     return network
 end #attach_preferences
 
-function attach_beliefs(network, init_beliefs, beliefs_order)
+function attach_beliefs(network, init_beliefs, beliefs_order, parties)
     # I'm way too lazy to implement a belief system right now
-    if beliefs_order == "NoBeliefs"
+    num_parties = length(parties)
+    if beliefs_order == "RandomBeliefs"
         for node in LightGraphs.vertices(network)
-            MetaGraphs.set_prop!(network, node, :beliefs, :no_beliefs)
+            beliefs_vector = rand(Float64, num_parties)
+            beliefs_vector = beliefs_vector./sum(beliefs_vector)
+            beliefs = Dict()
+            for party in parties
+                beliefs[party] = pop!(vec(beliefs_vector))
+            end
+            MetaGraphs.set_prop!(network, node, :beliefs, beliefs)
         end
     end
     return network
@@ -108,10 +115,11 @@ function ordered_nodes_by_degree(network)
     return [node[1] for node in nodes_degrees]
 end #ordered_nodes_by_degree
 
-function update_node(world::VotingWorld, node, preferences, beliefs, attributes)
-    new_network = MetaGraphs.set_prop(world.network, node, :preferences, preferences)
-    new_network = MetaGraphs.set_prop(new_network, node, :beliefs, beliefs)
-    new_network = MetaGraphs.set_prop(new_network, node, :attributes, attributes)
+function update_node(world, node, preferences, beliefs, attributes)
+    new_network = world.network
+    MetaGraphs.set_prop!(new_network, node, :preferences, preferences)
+    MetaGraphs.set_prop!(new_network, node, :beliefs, beliefs)
+    MetaGraphs.set_prop!(new_network, node, :attributes, attributes)
     return new_network
 end
 

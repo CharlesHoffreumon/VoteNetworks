@@ -10,14 +10,14 @@ module Dynamics
         limit::Int64
     end
 
-    function newDynamics(function_to_call, method = :poll, limit = 1, probabilities_to_be_called = :nothing)
+    function newDynamics(function_to_call; method = :poll, limit = 1, probabilities_to_be_called = :nothing)
         if probabilities_to_be_called == :nothing
             probabilities_to_be_called = ones(1)
         end
-        return aDynamics(probabilities_to_be_call, function_to_call, method, limit)
+        return aDynamics(probabilities_to_be_called, function_to_call, method, limit)
     end
 
-    function apply_dynamics(world::VotingWorld, dynamics::aDynamics)
+    function apply_dynamics(world, dynamics)
         if dynamics.probabilities_to_be_called == [1]
             dynamics.probabilities_to_be_called = ones(LightGraphs.nv(world.network))
         end
@@ -32,7 +32,7 @@ module Dynamics
                 neighbors_preferences = [MetaGraphs.get_prop(world.network, neighbor, :preferences) for neighbor in neighborhood]
                 neighbors_beliefs = [MetaGraphs.get_prop(world.network, neighbor, :beliefs) for neighbor in neighborhood]
                 neighbors_attributes = [MetaGraphs.get_prop(world.network, neighbor, :attributes) for neighbor in neighborhood]
-                response = dynamics.function_to_call(node_preference, node_beliefs, node_attributes, neighbors_preferences, neighbors_beliefs, neighbors_attributes)
+                response = dynamics.function_to_call(node_preferences, node_beliefs, node_attributes, neighbors_preferences, neighbors_beliefs, neighbors_attributes)
                 if dynamics.meth == :poll
                     new_network = World.update_node(new_world, node, response[1], response[2], response[3])
                     new_world = World.VotingWorld(new_network, new_world.parties, new_world.preference_range)
@@ -47,12 +47,15 @@ module Dynamics
             end
             ii = ii+1
         end
+        return new_world
     end
 
-    function apply_dynamics(world::VotingWorld, dynamics::aDynamics, n_iter)
+    function apply_dynamics(world, dynamics, n_iter::Int64)
+        new_world = world
         for ii = 1:n_iter
-            apply_dynamics(world, dynamics)
+            new_world = apply_dynamics(world, dynamics)
         end
+        return new_world
     end
 
     function gen_neighborhood(network, init_node, limit)
@@ -60,7 +63,7 @@ module Dynamics
         list_neighbors = [init_node]
         while ii != 0
             for node in list_neighbors
-                list_neighbors = unique(vcat(list_neighbors, LightGraphs.neighbors(node)))
+                list_neighbors = unique(vcat(list_neighbors, LightGraphs.neighbors(network,node)))
             end
             ii = ii-1
         end
