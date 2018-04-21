@@ -4,7 +4,7 @@ module Dynamics
     using LightGraphs
 
     struct aDynamics
-        probabilities_to_be_called::Array
+        probabilities_to_be_called
         function_to_call::Function
         meth::Symbol
         limit::Int64
@@ -29,19 +29,24 @@ module Dynamics
                 node_preferences = MetaGraphs.get_prop(world.network, node, :preferences)
                 node_beliefs = MetaGraphs.get_prop(world.network, node, :beliefs)
                 node_attributes = MetaGraphs.get_prop(world.network, node, :attributes)
-                neighbors_preferences = [MetaGraphs.get_prop(world.network, neighbor, :preferences) for neighbor in neighborhood]
-                neighbors_beliefs = [MetaGraphs.get_prop(world.network, neighbor, :beliefs) for neighbor in neighborhood]
-                neighbors_attributes = [MetaGraphs.get_prop(world.network, neighbor, :attributes) for neighbor in neighborhood]
+                neighbors_preferences = Dict()
+                neighbors_beliefs = Dict()
+                neighbors_attributes = Dict()
+                for neighbor in neighborhood
+                    neighbors_preferences[neighbor] = MetaGraphs.get_prop(world.network, neighbor, :preferences)
+                    neighbors_beliefs[neighbor] = MetaGraphs.get_prop(world.network, neighbor, :beliefs)
+                    neighbors_attributes[neighbor] = MetaGraphs.get_prop(world.network, neighbor, :attributes)
+                end
                 response = dynamics.function_to_call(node_preferences, node_beliefs, node_attributes, neighbors_preferences, neighbors_beliefs, neighbors_attributes)
                 if dynamics.meth == :poll
                     new_network = World.update_node(new_world, node, response[1], response[2], response[3])
                     new_world = World.VotingWorld(new_network, new_world.parties, new_world.preference_range)
                 elseif dynamics.meth == :cast
-                    jj = 1
                     for neighbor in neighborhood
-                        new_network = World.update_node(new_world, neighbor, response[jj][1], response[jj][2], response[jj][3])
-                        new_world = World.VotingWorld(new_network, new_world.parties, new_world.preference_range)
-                        jj = jj +1
+                        if neighbor in keys(response)
+                            new_network = World.update_node(new_world, neighbor, response[neighbor][1], response[neighbor][2], response[neighbor][3])
+                            new_world = World.VotingWorld(new_network, new_world.parties, new_world.preference_range)
+                        end
                     end
                 end
             end

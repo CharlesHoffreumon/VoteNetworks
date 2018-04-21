@@ -18,10 +18,7 @@ function initialize(num_voters; parties = [:A, :B], init_preferences = [], init_
     network = attach_preferences(network, parties, init_preferences, preferences_method, preference_order, preference_range)
     network = attach_beliefs(network, init_beliefs, beliefs_order, parties)
     network = attach_attributes(network, init_attributes, attributes_order)
-    print(typeof(parties))
-    print(typeof(network))
-    print(typeof(preference_range))
-    return VotingWorld(network, parties, preference_range)
+    return VotingWorld(network, parties, preference_range);
 end #initialize
 
 function build_network(num_voters, network_structure, avg_edges, edges_matrix, watts_strogatz_beta)
@@ -111,7 +108,7 @@ end
 
 function ordered_nodes_by_degree(network)
     nodes_degrees = [(node, length(LightGraphs.neighbors(network, node))) for node in LightGraphs.vertices(network)]
-    nodes_degrees = sort(nodes_degrees, by=x->x[2])
+    nodes_degrees = sort(nodes_degrees, by=x->x[2], rev=true)
     return [node[1] for node in nodes_degrees]
 end #ordered_nodes_by_degree
 
