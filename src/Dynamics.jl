@@ -43,8 +43,8 @@ module Dynamics
                     new_world = World.VotingWorld(new_network, new_world.parties, new_world.preference_range)
                 elseif dynamics.meth == :cast
                     for neighbor in neighborhood
-                        if neighbor in keys(response)
-                            new_network = World.update_node(new_world, neighbor, response[neighbor][1], response[neighbor][2], response[neighbor][3])
+                        if neighbor in keys(response[1])
+                            new_network = World.update_node(new_world, neighbor, response[1][neighbor], response[2][neighbor], response[3][neighbor])
                             new_world = World.VotingWorld(new_network, new_world.parties, new_world.preference_range)
                         end
                     end
